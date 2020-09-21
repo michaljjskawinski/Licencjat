@@ -15,13 +15,15 @@ microbiom <- "healthy" # healthy/unhealthy
 diet <- read.csv2(file = paste("diet/",diet_type,".csv",sep =""), sep = ';', header = TRUE)
 
 
-#WEJŚCIE 2: skład mikrobiomu
-bacteriaH <- c("bacteria/Bifidobacterium_mongoliense_DSM_21395.mat")
-#, "bacteria/Lactobacillus_amylovorus_GRL_1112.mat", "bacteria/Roseburia_intestinalis_L1_82.mat")
-bacteria_ammountH <- c(20)
-#, 20, 20)
+#WEJŚCIE 2: skład mikrobiomu (narazie jedna bakteria)
+bacteriaH <- c("Bifidobacterium_mongoliense_DSM_21395.mat",
+               "Clostridium_sp_SS2_1.mat",
+               "Lactobacillus_amylovorus_GRL_1112.mat",
+               "Roseburia_intestinalis_L1_82.mat")
+bacteria_ammountH <- c(10,10,10,10)
 
-bacteriaUnH <- c("bacteria/Bifidobacterium_mongoliense_DSM_21395.mat")
+
+bacteriaUnH <- c("Bifidobacterium_mongoliense_DSM_21395.mat")
 bacteria_ammountUnH <- c(20)
 
 if (microbiom == "healthy") {
@@ -32,14 +34,34 @@ if (microbiom == "healthy") {
   bacteria_ammount <- bacteria_ammountUnH
 }
 
+substances <- c()
+for(i in 1:nrow(diet)) {
+  substances <- append(substances, as.character(diet[i,]$Reaction))
+}
+bacteria_change <- data.frame("Bacteria" = bacteria, "Biomass_0" = bacteria_ammount, "Biomass_end" = bacteria_ammount) 
+for(s in substances) {
+  tmp <- data.frame(rep(FALSE,length(bacteria)))
+  colnames(tmp) = s
+  bacteria_change <- cbind(bacteria_change,tmp)
+}
+
+
+
+
+
 #STWORZENIE ARENY I DODANIE BAKTERII
-arena <- Arena(n=20,m=20)
+arena <- Arena(n=30,m=30)
 
 for (i in 1:length(bacteria)) {
-  bac <- readMATmod(bacteria[i])
+  bac <- readMATmod(paste("bacteria/",bacteria[i],sep=""))
   arena <- addOrg(arena,Bac(bac),amount=bacteria_ammount[i])
   arena <- addEssentialMed(arena, Bac(bac))
   #arena <- addDeafultMed(arena, Bac(bac))
+  
+  for(j in Bac(bac)@medium) {
+    #bacteria_change[[which(colnames(bacteria_change) == j)]][i] <- TRUE
+    try(bacteria_change[[which(colnames(bacteria_change) == j)]][i] <- TRUE,silent = TRUE)
+  }
 }
 
 
@@ -54,17 +76,21 @@ for(i in 1:nrow(diet)) {
 
 #SYMULACJA
 sim_no <- 10
-simulation <- simEnv(arena,time=sim_no)
+#simulation <- simEnv(arena,time=sim_no)
 #zapisywanie symulacji
-#save(simulation,file = "simulation.RData")
+#save(simulation,file = "simulation4.RData")
 #wczytywanie symulacji
-#load("simulation.RData")
-#simulation <- simulation
+load("simulation4.RData")
 
+
+for (i in 1:nrow(bacteria_change)) {
+  biomass_end <- sum(simulation@simlist[[sim_no+1]]$biomass)
+  bacteria_change[i,]$Biomass_end <- biomass_end
+}
 
 #ANALIZA WYNIKÓW,...
 par(mfrow=c(1,2))
-plotCurves2(simulation, legendpos = "topleft")
+plotCurves2(simulation, legendpos = "bottomleft")
 
 #par(mfrow=c(2,5))
 #evalArena(simulation, show_legend = FALSE, time=1:10)
@@ -74,10 +100,7 @@ plotCurves2(simulation, legendpos = "topleft")
 #varSubs <- getVarSubs(simulation)
 #getSubHist(simulation, "EX_lac_L(e)")
 
-bacteria_change <- data.frame("Bacteria" = bacteria, "Biomass_0" = bacteria_ammount, "Biomass_end" = bacteria_ammount)
-for (i in 1:nrow(bacteria_change)) {
-  biomass_end <- sum(simulation@simlist[[sim_no+1]]$biomass)
-  bacteria_change[i,]$Biomass_end <- biomass_end
-}
+
+
 #diet_out <- diet
 
