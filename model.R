@@ -16,11 +16,17 @@ diet <- read.csv2(file = paste("diet/",diet_type,".csv",sep =""), sep = ';', hea
 
 
 #WEJŚCIE 2: skład mikrobiomu (narazie jedna bakteria)
-bacteriaH <- c("Bifidobacterium_mongoliense_DSM_21395.mat",
+bacteriaH <- c("Akkermansia_muciniphila_ATCC_BAA_835.mat",
+               "Bacteroides_sp_2_1_7.mat",
+               "Bacteroides_thetaiotaomicron_VPI_5482.mat",
+               "Bacteroides_vulgatus_ATCC_8482.mat",
+               "Bifidobacterium_mongoliense_DSM_21395.mat",
                "Clostridium_sp_SS2_1.mat",
+               "Faecalibacterium_prausnitzii_SL3_3.mat",
                "Lactobacillus_amylovorus_GRL_1112.mat",
-               "Roseburia_intestinalis_L1_82.mat")
-bacteria_ammountH <- c(10,10,10,10)
+               "Roseburia_intestinalis_L1_82.mat",
+               "Ruminococcus_sp_SR1_5.mat")
+bacteria_ammountH <- c(10,10,10,10,10,10,10,10,10,10)
 
 
 bacteriaUnH <- c("Bifidobacterium_mongoliense_DSM_21395.mat")
@@ -50,7 +56,7 @@ for(s in substances) {
 
 
 #STWORZENIE ARENY I DODANIE BAKTERII
-arena <- Arena(n=30,m=30)
+arena <- Arena(n=100,m=100)
 
 for (i in 1:length(bacteria)) {
   bac <- readMATmod(paste("bacteria/",bacteria[i],sep=""))
@@ -78,9 +84,9 @@ for(i in 1:nrow(diet)) {
 sim_no <- 10
 #simulation <- simEnv(arena,time=sim_no)
 #zapisywanie symulacji
-#save(simulation,file = "simulation4.RData")
+save(simulation,file = "simulationMany.RData")
 #wczytywanie symulacji
-load("simulation4.RData")
+#load("simulation4.RData")
 
 
 for (i in 1:nrow(bacteria_change)) {
