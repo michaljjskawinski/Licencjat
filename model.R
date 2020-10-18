@@ -7,7 +7,7 @@ library(R.matlab)
 library(parallel)
 
 #PARAMETRY WEJŚCIA
-diet_type <- "fiber" # fat/fiber/Mediterranean/protein
+diet_type <- "fat" # fat/fiber/Mediterranean/protein
 microbiom <- "healthy" # healthy/unhealthy
 
 
@@ -61,7 +61,7 @@ arena <- Arena(n=100,m=100)
 for (i in 1:length(bacteria)) {
   bac <- readMATmod(paste("bacteria/",bacteria[i],sep=""))
   arena <- addOrg(arena,Bac(bac),amount=bacteria_ammount[i])
-  arena <- addEssentialMed(arena, Bac(bac))
+  #arena <- addEssentialMed(arena, Bac(bac))
   #arena <- addDeafultMed(arena, Bac(bac))
   
   for(j in Bac(bac)@medium) {
@@ -82,14 +82,14 @@ for(i in 1:nrow(diet)) {
 
 #SYMULACJA
 sim_no <- 10
-#simulation <- simEnv(arena,time=sim_no)
+simulation <- simEnv(arena,time=sim_no)
 #zapisywanie symulacji
-save(simulation,file = "simulationMany.RData")
+save(simulation,file = "simulationManyFatWithoutEssentials.RData")
 #wczytywanie symulacji
 #load("simulation4.RData")
 
 
-for (i in 1:nrow(bacteria_change)) {
+for (i in 1:nrow(bacteria_change)) { #count czy biomasa ? początkowa i końcowa
   biomass_end <- sum(simulation@simlist[[sim_no+1]]$biomass)
   bacteria_change[i,]$Biomass_end <- biomass_end
 }
