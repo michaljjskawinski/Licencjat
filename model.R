@@ -2,12 +2,13 @@
 #  1) np. nadwyżka glukozy (przyrost tkanki tłuszczowej)
 #  2) skład mikrobiomu → zmiany w składzie diety  (opracować przelicznik do modyfikacji diety przez mikrobiom
 
+setwd("/Users/michalskawinski/Desktop/Licencjat")
 library(BacArena)
 library(R.matlab)
 library(parallel)
 
 #PARAMETRY WEJŚCIA
-diet_type <- "fat" # fat/fiber/Mediterranean/protein
+diet_type <- "fiber" # fat/fiber/Mediterranean/protein
 microbiom <- "healthy" # healthy/unhealthy
 
 
@@ -44,7 +45,7 @@ if (microbiom == "healthy") {
 }
 
 #STWORZENIE ARENY I DODANIE BAKTERII
-arena <- Arena(n=100,m=100)
+arena <- Arena(n=30,m=30)
 
 for (i in 1:length(bacteria)) {
   bac <- readMATmod(paste("bacteria/",bacteria[i],sep=""))
@@ -64,12 +65,13 @@ for(i in 1:nrow(diet)) {
 
 
 #SYMULACJA
-sim_no <- 10
+sim_no <- 15
 simulation <- simEnv(arena,time=sim_no)
-#zapisywanie symulacji
-#save(simulation,file = "simulationManyOnlyEssentials.RData")
-#wczytywanie symulacji
-#load("simulation4.RData")
+#simulation <- simEnv(arena,time=sim_no, sec_obj='mtf')
+#ZAPISANIE SYMULACJI
+#save(simulation,file = "simulations/simulationfiber2bac-2.RData")
+#WCZYTANIE SYMULACJI
+#load("simulations/simulation4.RData")
 
 
 #STWORZENIE CSV Z ILOŚCIĄ BAKTERII
@@ -80,10 +82,10 @@ list <- lapply(simulation@simlist, function(x){
 mat_bac  <- do.call(cbind, list)
 rownames(mat_bac) <- names(simulation@specs)
 
-write.csv2(mat_bac, file = "output.csv", row.names = TRUE)
+write.csv2(mat_bac, file = "output/outputfiber2bac-2.csv", row.names = TRUE)
 
 
-#ANALIZA WYNIKÓW,...
+#ANALIZA WYNIKÓW...
 par(mfrow=c(1,2))
 plotCurves2(simulation, legendpos = "bottomleft")
 
