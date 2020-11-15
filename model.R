@@ -8,7 +8,7 @@ library(R.matlab)
 library(parallel)
 
 #PARAMETRY WEJŚCIA
-diet_type <- "fiber" # fat/fiber/Mediterranean/protein
+diet_type <- "fiber" # fat/fiber/Mediterranean/protein  (unhealthy?)
 microbiom <- "healthy" # healthy/unhealthy
 
 
@@ -18,23 +18,20 @@ diet <- read.csv2(file = paste("diet/",diet_type,".csv",sep =""), sep = ';', hea
 
 #WEJŚCIE 2: skład mikrobiomu (narazie jedna bakteria)
 
-#bacteriaH <- c("Akkermansia_muciniphila_ATCC_BAA_835.mat",
-#               "Bacteroides_sp_2_1_7.mat",
-#               "Bacteroides_thetaiotaomicron_VPI_5482.mat",
-#               "Bacteroides_vulgatus_ATCC_8482.mat",
-#               "Bifidobacterium_mongoliense_DSM_21395.mat",
-#               "Clostridium_sp_SS2_1.mat",
-#               "Faecalibacterium_prausnitzii_SL3_3.mat",
-#               "Lactobacillus_amylovorus_GRL_1112.mat",
-#               "Roseburia_intestinalis_L1_82.mat",
-#               "Ruminococcus_sp_SR1_5.mat")
-#bacteria_ammountH <- c(10,10,10,10,10,10,10,10,10,10)
+                                                    #Phylum|Class|Order
+bacteriaH <- c(#"Anaerostipes_caccae_DSM_14662.mat", #Firmicutes|Clostridia|Clostridiales
+               "Bacteroides_thetaiotaomicron_VPI_5482.mat", #Bacteroidetes|Bacteroidia|Bacteroidales
+               "Blautia_producta_DSM_2950.mat", #Firmicutes|Clostridia|Clostridiales
+               "Escherichia_coli_str_K_12_substr_MG1655.mat", #Proteobacteria|Gammaproteobacteria|Enterobacteriales
+               "Clostridium_ramosum_VPI_0427_DSM_1402.mat", #Firmicutes|Erysipelotrichia|Erysipelotrichales
+               "Lactobacillus_plantarum_subsp_plantarum_ATCC_14917.mat", #Firmicutes|Bacilli|Lactobacillales
+               "Bifidobacterium_longum_NCC2705.mat", #Actinobacteria|Actinobacteria|Bifidobacteriales
+               "Akkermansia_muciniphila_ATCC_BAA_835.mat") #Verrucomicrobia|Verrucomicrobiae|Verrucomicrobiales
+bacteria_ammountH <- c(5,5,5,5,5,5,5)
 
-bacteriaH <- c("Akkermansia_muciniphila_ATCC_BAA_835.mat", "Bacteroides_sp_2_1_7.mat")
-bacteria_ammountH <- c(10,10)
 
-bacteriaUnH <- c("Bifidobacterium_mongoliense_DSM_21395.mat")
-bacteria_ammountUnH <- c(20)
+bacteriaUnH <- c()
+bacteria_ammountUnH <- c()
 
 if (microbiom == "healthy") {
   bacteria <- bacteriaH
@@ -45,17 +42,21 @@ if (microbiom == "healthy") {
 }
 
 #STWORZENIE ARENY I DODANIE BAKTERII
-arena <- Arena(n=30,m=30)
+arena <- Arena(n=100,m=100, stir=F, tstep=1) #Lx=0.025, Ly=0.025
 
 for (i in 1:length(bacteria)) {
   bac <- readMATmod(paste("bacteria/",bacteria[i],sep=""))
-  arena <- addOrg(arena,Bac(bac),amount=bacteria_ammount[i])
+  arena <- addOrg(arena,Bac(bac,growtype="exponential", speed=10),amount=bacteria_ammount[i]) #?
   arena <- addEssentialMed(arena, Bac(bac))  
   #arena <- addDeafultMed(arena, Bac(bac))
 }
 
+diet <- diet[which(diet$Reaction %in% arena@mediac),]
 
 #DODANIE SKŁADNIKÓW Z DIETY DO ARENY
+arena <- addSubs(arena, smax=diet$Flux.Value, mediac=diet$Reaction, unit="mM")
+
+
 for(i in 1:nrow(diet)) {
   row <- diet[i,]
   subst <- row$Reaction
@@ -65,13 +66,13 @@ for(i in 1:nrow(diet)) {
 
 
 #SYMULACJA
-sim_no <- 15
+sim_no <- 16
 simulation <- simEnv(arena,time=sim_no)
-#simulation <- simEnv(arena,time=sim_no, sec_obj='mtf')
+
 #ZAPISANIE SYMULACJI
-#save(simulation,file = "simulations/simulationfiber2bac-2.RData")
+#save(simulation,file = "simulations/simulationFiber5bac-mtf.RData")
 #WCZYTANIE SYMULACJI
-#load("simulations/simulation4.RData")
+#load("simulations/simulationManyFat.RData")
 
 
 #STWORZENIE CSV Z ILOŚCIĄ BAKTERII
@@ -81,9 +82,16 @@ list <- lapply(simulation@simlist, function(x){
 })
 mat_bac  <- do.call(cbind, list)
 rownames(mat_bac) <- names(simulation@specs)
+mat_bac <- t(mat_bac)
 
-write.csv2(mat_bac, file = "output/outputfiber2bac-2.csv", row.names = TRUE)
+#mat_reversed_bac <- data.frame(t(mat_bac[-1]))
+#colnames(mat_reversed_bac) <- mat_bac[, 1]
 
+write.csv2(mat_bac, file = "output/outputFiber5bac-mtf.csv", row.names = TRUE)
+
+#pzebiegi 3 wzorcowe dłuższe dla diet 
+#2 grupy statystyk: dla całej populacji; dla jednej populacji względem reszty 
+#pomyśleć o wizualizacji
 
 #ANALIZA WYNIKÓW...
 par(mfrow=c(1,2))
