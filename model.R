@@ -18,15 +18,15 @@ diet <- read.csv2(file = paste("diet/",diet_type,".csv",sep =""), sep = ';', hea
 
 #WEJŚCIE 2: skład mikrobiomu (narazie jedna bakteria)
 
-                                                    #Phylum|Class|Order
+#Phylum|Class|Order
 bacteriaH <- c(#"Anaerostipes_caccae_DSM_14662.mat", #Firmicutes|Clostridia|Clostridiales
-               "Bacteroides_thetaiotaomicron_VPI_5482.mat", #Bacteroidetes|Bacteroidia|Bacteroidales
-               "Blautia_producta_DSM_2950.mat", #Firmicutes|Clostridia|Clostridiales
-               "Escherichia_coli_str_K_12_substr_MG1655.mat", #Proteobacteria|Gammaproteobacteria|Enterobacteriales
-               "Clostridium_ramosum_VPI_0427_DSM_1402.mat", #Firmicutes|Erysipelotrichia|Erysipelotrichales
-               "Lactobacillus_plantarum_subsp_plantarum_ATCC_14917.mat", #Firmicutes|Bacilli|Lactobacillales
-               "Bifidobacterium_longum_NCC2705.mat", #Actinobacteria|Actinobacteria|Bifidobacteriales
-               "Akkermansia_muciniphila_ATCC_BAA_835.mat") #Verrucomicrobia|Verrucomicrobiae|Verrucomicrobiales
+  "Bacteroides_thetaiotaomicron_VPI_5482.mat", #Bacteroidetes|Bacteroidia|Bacteroidales
+  "Blautia_producta_DSM_2950.mat", #Firmicutes|Clostridia|Clostridiales
+  "Escherichia_coli_str_K_12_substr_MG1655.mat", #Proteobacteria|Gammaproteobacteria|Enterobacteriales
+  "Clostridium_ramosum_VPI_0427_DSM_1402.mat", #Firmicutes|Erysipelotrichia|Erysipelotrichales
+  "Lactobacillus_plantarum_subsp_plantarum_ATCC_14917.mat", #Firmicutes|Bacilli|Lactobacillales
+  "Bifidobacterium_longum_NCC2705.mat", #Actinobacteria|Actinobacteria|Bifidobacteriales
+  "Akkermansia_muciniphila_ATCC_BAA_835.mat") #Verrucomicrobia|Verrucomicrobiae|Verrucomicrobiales
 bacteria_ammountH <- c(5,5,5,5,5,5,5)
 
 
@@ -42,7 +42,7 @@ if (microbiom == "healthy") {
 }
 
 #STWORZENIE ARENY I DODANIE BAKTERII
-arena <- Arena(n=100,m=100, stir=F, tstep=1) #Lx=0.025, Ly=0.025
+arena <- Arena(n=100,m=100,Lx=0.025, Ly=0.025, stir=F, tstep=1) 
 
 for (i in 1:length(bacteria)) {
   bac <- readMATmod(paste("bacteria/",bacteria[i],sep=""))
@@ -57,22 +57,14 @@ diet <- diet[which(diet$Reaction %in% arena@mediac),]
 arena <- addSubs(arena, smax=diet$Flux.Value, mediac=diet$Reaction, unit="mM")
 
 
-for(i in 1:nrow(diet)) {
-  row <- diet[i,]
-  subst <- row$Reaction
-  subst_ammount <- row$Flux.Value
-  arena <- addSubs(arena, smax=subst_ammount, mediac=subst, unit="mM")
-}
-
-
 #SYMULACJA
-sim_no <- 16
+sim_no <- 12
 simulation <- simEnv(arena,time=sim_no)
 
 #ZAPISANIE SYMULACJI
-#save(simulation,file = "simulations/simulationFiber5bac-mtf.RData")
+#save(simulation,file = "simulations/simulationFiber7bac.RData")
 #WCZYTANIE SYMULACJI
-#load("simulations/simulationManyFat.RData")
+load("simulations/simulationFiber7bac.RData")
 
 
 #STWORZENIE CSV Z ILOŚCIĄ BAKTERII
@@ -87,11 +79,20 @@ mat_bac <- t(mat_bac)
 #mat_reversed_bac <- data.frame(t(mat_bac[-1]))
 #colnames(mat_reversed_bac) <- mat_bac[, 1]
 
-write.csv2(mat_bac, file = "output/outputFiber5bac-mtf.csv", row.names = TRUE)
+write.csv2(mat_bac, file = "output/outputFiber7bac.csv", row.names = TRUE)
 
-#pzebiegi 3 wzorcowe dłuższe dla diet 
-#2 grupy statystyk: dla całej populacji; dla jednej populacji względem reszty 
-#pomyśleć o wizualizacji
+#CSV\ka Z PROPORCJAMI
+bac_csv <- read.csv2(file = "output/outputFiber7bac.csv", header=TRUE)
+bac_csv <- bac_csv[-c(1)]
+bac_prop_csv <- data.frame()
+sum <- 0
+for (i in names(bac_csv)) {
+  sum <- sum + bac_csv[nrow(bac_csv),i]
+}
+for (i in names(bac_csv)) {
+  bac_prop_csv[1,i] <- bac_csv[[nrow(bac_csv),i]]/sum
+}
+write.csv2(mat_bac, file = "output/outputFiber7bac.csv", row.names = FALSE)
 
 #ANALIZA WYNIKÓW...
 par(mfrow=c(1,2))
@@ -99,6 +100,8 @@ plotCurves2(simulation, legendpos = "bottomleft")
 
 par(mfrow=c(2,5))
 evalArena(simulation, show_legend = FALSE, time=1:10)
+
+
 
 
 
