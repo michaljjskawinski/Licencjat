@@ -1,9 +1,16 @@
 ##########################################################
-#	   | SYMULACJA TKANKI TŁUSZCZOWEJ |	
-#	   Stworzono: 31.12.2020
-#   Funkcja dyfuzji pochodzi z:
+#	| SYMULACJA TKANKI TŁUSZCZOWEJ |	
+#	Stworzono: 31.12.2020
+#   
+#	Funkcja dyfuzji pochodzi z:
 #   https://scipython.com/book/chapter-7-matplotlib/examples/the-two-dimensional-diffusion-equation/
 #
+#	TO DO:
+#	- Tkanka tłuszczowa ma pochłaniać LPS
+#	- Śmierć komórki tłuszczowej - maksymalny rozmiar, liza do otoczenia
+#	- Input do symulacji ???
+#	- Output ??
+#	- Napływ LPS z zewnątrz: funkcja [narazie hardcoded]
 ##########################################################
 
 import numpy as np
@@ -24,7 +31,7 @@ dx2, dy2 = dx*dx, dy*dy
 dt = dx2 * dy2 / (2 * D * (dx2 + dy2))
 
 
-# Inicjaja numpy arrays z 0's
+# Inicjaja początkowych gridów
 u = np.zeros((ny, nx))  #2D grid umiejscowienia+zawartości LPS (wiersz/kolumna)
 AT_u = np.zeros((ny, nx)) #2D grid umiejsowienia komórek AT (wiersz/kolumna)
 
@@ -39,6 +46,7 @@ class AT_cell:
 		self.x = x
 		self.y = y
 		self.LPS_container = LPS_container
+		self.alive = True
 
 	def move(self, AT_u0):
 		AT_u_new = AT_u0.copy()
@@ -88,9 +96,21 @@ class AT_cell:
 					break
 		return AT_u_new
 
+	def eat_LPS(self, u0):
+		u_new = u0.copy()
+		
+		#... tutaj wchlania  stałą liczbę LPS
+		if self.LPS_container > 100:#narazie stała maksymalna pojemność LPS, po której liza
+			self.alive = False
+		return u_new
 
-AT_cells_num = 1 #liczba komórek 
-AT_cells_list = [] #lista komórek 
+	def lysis(self, u0):
+		u_new = u0.copy()
+		return u_new
+
+
+AT_cells_num = 1	#Liczba komórek 
+AT_cells_list = []	#Lista komórek 
 
 for cell in range(AT_cells_num):
 	while (1):
@@ -116,65 +136,22 @@ def diffuse_in_timestep(u):
 	return u
 
 
-#póki co dozwolona tylko 1 AT_cell, dodac wiecej if'ów (jeżli nie może iść, więcej kierunków)
-def move_AT_cell(AT_u0):
-	AT_u_new = AT_u0.copy()
-	for y in range(ny):
-		for x in range(nx):
-			if AT_u0[y,x] != 0:
-				while(1):
-					val = random.randint(1, 4) 
-					if val == 1: 		#UP
-						if y == ny-1:
-							continue
-						elif AT_u_new[y+1,x] != 0:
-							continue
-						else:
-							AT_u_new[y+1,x] = 1
-							AT_u_new[y,x] = 0
-							break
-					elif val == 2: 		#DOWN
-						if y == 0:
-							continue
-						elif AT_u_new[y-1,x] != 0:
-							continue
-						else:
-							AT_u_new[y-1,x] = 1
-							AT_u_new[y,x] = 0
-							break
-					elif val == 3: 		#RIGHT
-						if x == nx-1:
-							continue
-						elif AT_u_new[y,x+1] != 0:
-							continue
-						else:
-							AT_u_new[y,x+1] = 1
-							AT_u_new[y,x] = 0
-							break
-					elif val == 4: 		#LEFT
-						if x == 0:
-							continue
-						elif AT_u_new[y,x-1] != 0:
-							continue
-						else:
-							AT_u_new[y,x-1] = 1
-							AT_u_new[y,x] = 0
-							break
-	return AT_u_new
 
-
-
-# Liczba kroków
-nsteps = 101
 
 
 #SYMULACJA
+nsteps = 101	#Liczba kroków
+
 def simulate(u, AT_u, nsteps):
 	for step in range(nsteps):
 		u = diffuse_in_timestep(u)
 		for cell in AT_cells_list:
 			AT_u = cell.move(AT_u)
 			print("x={}\ty={}".format(cell.x,cell.y))
+		 	u = cell.eat_LPS(u)
+		 	if cell.alive = False:
+		 		u = cell.lysis(u)
+		 		AT_cells_list.remove(cell)
 		fig = plt.imshow(AT_u)
 		plt.pause(0.05)
 		fig.remove()
@@ -189,7 +166,8 @@ def simulate(u, AT_u, nsteps):
 
 #MAIN
 u, At_u = simulate(u, AT_u, nsteps)
-#plt.show()
+
+
 
 
 
